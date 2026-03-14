@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🎙️ Language Coach AI — Deploy Guide
 
 **Frontend**: GitHub Pages (miễn phí, tự động deploy)  
@@ -139,3 +140,6 @@ OpenAI API + Azure Speech API
 **CORS**:
 - Nhớ đặt `ALLOWED_ORIGINS` đúng URL GitHub Pages của bạn
 - Format: `https://username.github.io` (không có `/` ở cuối)
+=======
+# Coach-Zh-EL
+>>>>>>> c0b9af929738b23da6dcb9e7869b0d10e073657d
