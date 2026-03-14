@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: langcoach-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false          # Bạn tự điền trong Render dashboard — KHÔNG commit lên GitHub
+      - key: AZURE_SPEECH_KEY
+        sync: false          # Tùy chọn
+      - key: AZURE_SPEECH_REGION
+        value: eastasia
+      - key: ALLOWED_ORIGINS
+        value: https://YOUR_GITHUB_USERNAME.github.io   # Thay bằng URL GitHub Pages của bạn

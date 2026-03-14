@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Coach AI 🎙️</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:     #07070f;
+  --bg1:    #0d0d1e;
+  --bg2:    #111128;
+  --border: #1a1a35;
+  --text:   #e2e8f0;
+  --muted:  #4a4a6a;
+  --dim:    #252545;
+  --en:     #2563eb;
+  --en2:    #7c3aed;
+  --zh:     #dc2626;
+  --zh2:    #f97316;
+  --accent: #00e5ff;
+  --gold:   #f59e0b;
+  --green:  #4ade80;
+  --red:    #f87171;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:var(--bg); color:var(--text); font-family:'Outfit',sans-serif; min-height:100vh; }
+
+/* ── LAYOUT ── */
+.app { display:grid; grid-template-columns:280px 1fr; min-height:100vh; }
+.sidebar { background:var(--bg1); border-right:1px solid var(--border); padding:20px 16px; overflow-y:auto; position:sticky; top:0; height:100vh; }
+.main { padding:24px 28px; display:flex; flex-direction:column; gap:20px; max-width:860px; }
+
+/* ── HERO ── */
+.hero h1 {
+  font-size:2rem; font-weight:800; letter-spacing:-1px;
+  background:linear-gradient(135deg,#00e5ff,#a855f7,#f97316);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.hero p { font-size:.85rem; color:var(--muted); margin-top:4px; }
+
+/* ── LANG SWITCH ── */
+.lang-switch { display:flex; gap:8px; margin-top:16px; }
+.lang-btn {
+  flex:1; padding:9px; border-radius:100px; font-size:.88rem;
+  font-weight:700; cursor:pointer; border:1.5px solid var(--border);
+  background:transparent; color:var(--muted); transition:.2s; font-family:'Outfit',sans-serif;
+}
+.lang-btn.active-en { background:linear-gradient(135deg,var(--en),var(--en2)); color:#fff; border-color:transparent; }
+.lang-btn.active-zh { background:linear-gradient(135deg,var(--zh),var(--zh2)); color:#fff; border-color:transparent; }
+
+/* ── PROGRESS ── */
+.progress-wrap { margin-top:16px; }
+.progress-wrap label { font-size:.72rem; color:var(--muted); font-weight:600; }
+.progress-bar { background:var(--dim); border-radius:100px; height:5px; margin:5px 0 2px; overflow:hidden; }
+.progress-fill { height:5px; border-radius:100px; transition:width .5s; }
+.fill-en { background:linear-gradient(90deg,var(--accent),var(--en)); }
+.fill-zh { background:linear-gradient(90deg,var(--zh),var(--zh2)); }
+.progress-text { font-size:.7rem; color:var(--dim); text-align:right; }
+
+/* ── ROADMAP NAV ── */
+.roadmap-section { margin-top:14px; }
+.roadmap-section h3 { font-size:.75rem; color:var(--muted); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:8px; }
+.month-group { margin-bottom:8px; }
+.month-header {
+  font-size:.78rem; font-weight:600; color:var(--muted); cursor:pointer;
+  padding:5px 8px; border-radius:8px; display:flex; justify-content:space-between;
+  transition:.2s;
+}
+.month-header:hover { background:var(--bg2); color:var(--text); }
+.month-days { display:none; padding-left:4px; }
+.month-days.open { display:block; }
+.day-nav-btn {
+  width:100%; text-align:left; padding:5px 8px; border:none; background:transparent;
+  color:var(--muted); font-size:.75rem; cursor:pointer; border-radius:6px; transition:.15s;
+  font-family:'Outfit',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.day-nav-btn:hover { background:var(--bg2); color:var(--text); }
+.day-nav-btn.current { color:#a78bfa; background:#13132a; }
+.day-nav-btn.done { color:var(--green); }
+
+/* ── PRON PRACTICE ── */
+.pron-section { margin-top:14px; border-top:1px solid var(--border); padding-top:14px; }
+.pron-section h3 { font-size:.75rem; color:var(--muted); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:8px; }
+.pron-input {
+  width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px;
+  padding:8px 10px; color:var(--text); font-size:.82rem; font-family:'Outfit',sans-serif;
+  margin-bottom:6px;
+}
+.pron-input:focus { outline:none; border-color:#3a3a6a; }
+.pron-rec-btn {
+  width:100%; padding:7px; border-radius:8px; border:1px solid var(--border);
+  background:var(--bg2); color:#60a5fa; font-size:.8rem; font-weight:600;
+  cursor:pointer; transition:.2s; font-family:'Outfit',sans-serif;
+}
+.pron-rec-btn:hover { background:#0c1a33; }
+.pron-rec-btn.recording { background:#2d0a0a; color:var(--red); border-color:#991b1b; }
+
+/* ── DAY CARD ── */
+.day-card {
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:16px; padding:18px 22px;
+}
+.day-badge {
+  display:inline-block; background:#13132a; border:1px solid #2a2a4a;
+  border-radius:100px; padding:3px 14px; font-size:.72rem; color:#818cf8; font-weight:600;
+  margin-bottom:10px;
+}
+.day-title { font-size:1.15rem; font-weight:700; }
+.day-goal  { font-size:.8rem; color:var(--muted); margin-top:4px; }
+
+/* ── VOCAB GRID ── */
+.vocab-section h3 { font-size:.8rem; color:var(--muted); font-weight:600; margin-bottom:10px; }
+.vocab-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:8px; }
+.vocab-card {
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:12px; padding:11px 13px; position:relative;
+}
+.v-word { font-size:.95rem; font-weight:700; color:#a78bfa; font-family:'JetBrains Mono',monospace; }
+.v-pron { font-size:.72rem; color:var(--gold); margin:2px 0; font-style:italic; }
+.v-meaning { font-size:.8rem; color:#94a3b8; }
+.v-example { font-size:.72rem; color:var(--dim); margin-top:3px; font-style:italic; line-height:1.4; }
+.spk-btn {
+  position:absolute; top:9px; right:9px;
+  background:#1a1a3a; border:1px solid #2a2a5a;
+  border-radius:7px; padding:3px 7px; font-size:.7rem; cursor:pointer;
+  color:#60a5fa; transition:.2s; line-height:1;
+}
+.spk-btn:hover { background:#2a2a5a; }
+.spk-btn.loading { opacity:.5; cursor:not-allowed; }
+
+/* ── CHAT ── */
+.chat-area { display:flex; flex-direction:column; gap:0; }
+.chat-empty { text-align:center; color:var(--dim); padding:2.5rem; font-size:.88rem; }
+.chat-empty b { color:#7c3aed; }
+.label-u { text-align:right; font-size:.68rem; color:#7c3aed; font-weight:600; margin:0 4px 2px; }
+.label-b { text-align:left;  font-size:.68rem; color:var(--accent); font-weight:600; margin:0 4px 2px; }
+.bubble-u {
+  background:linear-gradient(135deg,#7c3aed,#2563eb);
+  color:#fff; padding:10px 15px; border-radius:16px 16px 3px 16px;
+  margin:4px 0 4px 16%; font-size:.88rem; line-height:1.55;
+}
+.bubble-b {
+  background:var(--bg2); color:var(--text); border:1px solid var(--border);
+  padding:10px 15px; border-radius:16px 16px 16px 3px;
+  margin:4px 16% 4px 0; font-size:.88rem; line-height:1.6;
+}
+
+/* ── PRON SCORE CARD ── */
+.score-card {
+  background:#0a1628; border:1px solid #1e3a5f; border-radius:10px;
+  padding:9px 14px; margin:4px 16% 4px 0; display:flex; align-items:center; gap:12px;
+}
+.score-num { font-size:1.5rem; font-weight:800; font-family:'JetBrains Mono',monospace; }
+.score-good { color:var(--green); }
+.score-ok   { color:var(--gold); }
+.score-bad  { color:var(--red); }
+.score-detail { font-size:.72rem; color:var(--muted); line-height:1.6; }
+
+/* ── CONTROLS ── */
+.controls { display:flex; flex-direction:column; align-items:center; gap:8px; padding:8px 0; }
+.rec-btn {
+  padding:12px 44px; border-radius:100px; border:none;
+  background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff;
+  font-size:1rem; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif;
+  box-shadow:0 4px 20px rgba(124,58,237,.35); transition:.2s;
+}
+.rec-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 28px rgba(124,58,237,.5); }
+.rec-btn:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.rec-btn.recording { background:linear-gradient(135deg,#991b1b,#b45309); box-shadow:0 4px 20px rgba(239,68,68,.4); }
+.hint { font-size:.72rem; color:var(--dim); }
+
+/* ── STATUS ── */
+.status-bar { text-align:center; }
+.status-pill { display:inline-block; padding:4px 16px; border-radius:100px; font-size:.75rem; font-weight:600; }
+.s-ready { background:#0d2218; color:var(--green); border:1px solid #166534; }
+.s-rec   { background:#2d0a0a; color:var(--red); border:1px solid #991b1b; }
+.s-proc  { background:#0c1a33; color:#60a5fa; border:1px solid #1e3a5f; }
+
+/* ── AUDIO ── */
+audio { width:100%; margin:4px 16% 2px 0; max-width:60%; border-radius:8px; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px) {
+  .app { grid-template-columns:1fr; }
+  .sidebar { position:static; height:auto; }
+  .bubble-u { margin-left:8%; }
+  .bubble-b, .score-card, audio { margin-right:8%; }
+}
+
+.divider { border:none; border-top:1px solid var(--border); margin:4px 0; }
+</style>
+</head>
+<body>
+
+<div class="app">
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sidebar">
+  <div class="hero">
+    <h1>Language Coach</h1>
+    <p>Song ngữ · Phát âm · 6 tháng</p>
+  </div>
+
+  <div class="lang-switch">
+    <button class="lang-btn active-en" id="btn-en" onclick="switchLang('en')">🇺🇸 Tiếng Anh</button>
+    <button class="lang-btn" id="btn-zh" onclick="switchLang('zh')">🇨🇳 Tiếng Trung</button>
+  </div>
+
+  <div class="progress-wrap">
+    <label id="prog-label">Tiến độ Tiếng Anh</label>
+    <div class="progress-bar"><div class="progress-fill fill-en" id="prog-fill" style="width:0%"></div></div>
+    <div class="progress-text" id="prog-text">0/120 ngày</div>
+  </div>
+
+  <div class="roadmap-section">
+    <h3>Lộ trình</h3>
+    <div id="roadmap-nav"></div>
+  </div>
+
+  <div class="pron-section">
+    <h3>🎯 Luyện phát âm từng từ</h3>
+    <input class="pron-input" id="pron-word-input" placeholder="Nhập từ cần luyện phát âm..." />
+    <button class="pron-rec-btn" id="pron-rec-btn" onclick="startPronPractice()">🎤 Ghi âm & Chấm điểm</button>
+    <div id="pron-result" style="margin-top:8px;font-size:.75rem;color:var(--muted)"></div>
+  </div>
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main">
+
+  <!-- Day header -->
+  <div class="day-card" id="day-card">
+    <div class="day-badge" id="day-badge">📅 Ngày 1 · Tháng 1</div>
+    <div class="day-title" id="day-title">👋 Chào hỏi & Giới thiệu</div>
+    <div class="day-goal" id="day-goal">🎯 Giới thiệu bản thân tự tin bằng tiếng Anh</div>
+  </div>
+
+  <!-- Vocab -->
+  <div class="vocab-section">
+    <h3>📚 Từ vựng hôm nay — nhấn 🔊 để nghe phát âm chuẩn</h3>
+    <div class="vocab-grid" id="vocab-grid"></div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Status -->
+  <div class="status-bar">
+    <span class="status-pill s-ready" id="status-pill">✅ Sẵn sàng luyện tập</span>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-area" id="chat-area">
+    <div class="chat-empty" id="chat-empty">
+      💬 Nhấn ghi âm và bắt đầu về chủ đề <b id="empty-theme">👋 Chào hỏi</b><br>
+      <span style="font-size:.75rem;color:var(--dim)">Nói tiếng Việt → Coach giải thích · Nói ngoại ngữ → Coach luyện tập</span>
+    </div>
+  </div>
+
+  <!-- Record -->
+  <div class="controls">
+    <button class="rec-btn" id="rec-btn" onclick="toggleRecord()">🎙️ Bắt đầu ghi âm</button>
+    <div class="hint">Nói tiếng Việt hoặc tiếng Anh/Trung — AI tự nhận biết</div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIG — Đổi URL này sau khi deploy backend lên Render
+// ═══════════════════════════════════════════════════
+const API_BASE = "https://YOUR-APP-NAME.onrender.com"; // ← Thay URL Render của bạn vào đây
+
+// ═══════════════════════════════════════════════════
+// VOCABULARY DATABASE
+// ═══════════════════════════════════════════════════
+const VOCAB_DB = {
+  en: {
+    "M1W1_greetings": { title:"Chào hỏi & Giới thiệu", words:[
+      {word:"introduce", pron:"/ɪntrəˈdjuːs/", meaning:"giới thiệu", example:"Let me introduce myself."},
+      {word:"pleasure",  pron:"/ˈpleʒər/",      meaning:"hân hạnh",  example:"It's a pleasure to meet you."},
+      {word:"colleague", pron:"/ˈkɒliːɡ/",      meaning:"đồng nghiệp",example:"This is my colleague, Sarah."},
+      {word:"profession",pron:"/prəˈfeʃən/",    meaning:"nghề nghiệp",example:"What's your profession?"},
+      {word:"currently", pron:"/ˈkʌrəntli/",    meaning:"hiện tại",  example:"I currently work in IT."},
+      {word:"originally",pron:"/əˈrɪdʒɪnəli/", meaning:"xuất xứ",   example:"I'm originally from Hanoi."},
+      {word:"background",pron:"/ˈbækɡraʊnd/",  meaning:"nền tảng",  example:"Tell me about your background."},
+      {word:"based in",  pron:"/beɪst ɪn/",     meaning:"làm việc tại",example:"Our team is based in Saigon."},
+    ]},
+    "M1W1_family": { title:"Gia đình", words:[
+      {word:"sibling",    pron:"/ˈsɪblɪŋ/",      meaning:"anh chị em",  example:"I have two siblings."},
+      {word:"supportive", pron:"/səˈpɔːtɪv/",    meaning:"luôn ủng hộ", example:"My family is very supportive."},
+      {word:"close-knit", pron:"/kloʊs nɪt/",    meaning:"gắn bó chặt", example:"We're a close-knit family."},
+      {word:"eldest",     pron:"/ˈeldɪst/",       meaning:"con cả",      example:"I'm the eldest child."},
+      {word:"raise",      pron:"/reɪz/",          meaning:"nuôi dưỡng",  example:"My grandparents raised me."},
+      {word:"rely on",    pron:"/rɪˈlaɪ/",        meaning:"dựa vào",     example:"I can rely on my parents."},
+      {word:"extended family",pron:"/ɪkˈstendɪd/",meaning:"đại gia đình",example:"We have a big extended family."},
+      {word:"immediate family",pron:"/ɪˈmiːdiət/",meaning:"gia đình gần",example:"My immediate family has 4 members."},
+    ]},
+    "M1W2_daily_routine": { title:"Thói quen hàng ngày", words:[
+      {word:"commute",    pron:"/kəˈmjuːt/",  meaning:"đi làm hàng ngày", example:"My commute takes 30 minutes."},
+      {word:"routine",    pron:"/ruːˈtiːn/",  meaning:"thói quen",         example:"I have a strict morning routine."},
+      {word:"productive", pron:"/prəˈdʌktɪv/",meaning:"có năng suất",      example:"Morning is my most productive time."},
+      {word:"prioritize", pron:"/praɪˈɒrɪtaɪz/",meaning:"ưu tiên",        example:"I prioritize exercise every morning."},
+      {word:"habit",      pron:"/ˈhæbɪt/",    meaning:"thói quen",         example:"Reading is a good habit."},
+      {word:"schedule",   pron:"/ˈʃedjuːl/",  meaning:"lịch trình",        example:"What's your daily schedule?"},
+      {word:"wind down",  pron:"/waɪnd daʊn/",meaning:"thư giãn trước ngủ",example:"I read to wind down at night."},
+      {word:"overwhelmed",pron:"/ˌoʊvərˈwelmd/",meaning:"quá tải",        example:"I feel overwhelmed sometimes."},
+    ]},
+    "M1W2_food": { title:"Đồ ăn & Nhà hàng", words:[
+      {word:"appetizer",  pron:"/ˈæpɪtaɪzər/", meaning:"món khai vị",   example:"What would you like as an appetizer?"},
+      {word:"cuisine",    pron:"/kwɪˈziːn/",    meaning:"ẩm thực",       example:"I love Vietnamese cuisine."},
+      {word:"recommendation",pron:"/ˌrekəmenˈdeɪʃən/",meaning:"gợi ý",  example:"Do you have any recommendations?"},
+      {word:"portion",    pron:"/ˈpɔːʃən/",     meaning:"khẩu phần",    example:"The portions here are generous."},
+      {word:"vegetarian", pron:"/ˌvedʒɪˈteəriən/",meaning:"ăn chay",    example:"Do you have vegetarian options?"},
+      {word:"allergic to",pron:"/əˈlɜːdʒɪk/",  meaning:"dị ứng với",   example:"I'm allergic to shellfish."},
+      {word:"well-done",  pron:"/wel dʌn/",      meaning:"chín kỹ",      example:"I'd like my steak well-done."},
+      {word:"compliment the chef",pron:"/ˈkɒmplɪmənt/",meaning:"khen đầu bếp",example:"Please compliment the chef!"},
+    ]},
+    "M2W1_interview": { title:"Phỏng vấn xin việc", words:[
+      {word:"strength",      pron:"/streŋθ/",       meaning:"điểm mạnh",     example:"One of my strengths is problem-solving."},
+      {word:"weakness",      pron:"/ˈwiːknəs/",     meaning:"điểm yếu",      example:"I'm working on my weakness."},
+      {word:"motivated",     pron:"/ˈmoʊtɪveɪtɪd/",meaning:"có động lực",   example:"I'm highly motivated to learn."},
+      {word:"proactive",     pron:"/prəʊˈæktɪv/",  meaning:"chủ động",      example:"I try to be proactive."},
+      {word:"deadline",      pron:"/ˈdedlaɪn/",    meaning:"hạn chót",      example:"I always meet my deadlines."},
+      {word:"accomplishment",pron:"/əˈkɒmplɪʃmənt/",meaning:"thành tích",   example:"What's your greatest accomplishment?"},
+      {word:"ambitious",     pron:"/æmˈbɪʃəs/",    meaning:"có hoài bão",   example:"I'm ambitious and goal-oriented."},
+      {word:"multitask",     pron:"/ˈmʌltɪtɑːsk/", meaning:"làm nhiều việc",example:"I can effectively multitask."},
+    ]},
+    "M2W2_meetings": { title:"Họp hành & Thảo luận", words:[
+      {word:"agenda",      pron:"/əˈdʒendə/",     meaning:"chương trình họp", example:"Let's go through the agenda."},
+      {word:"consensus",   pron:"/kənˈsensəs/",   meaning:"sự đồng thuận",    example:"Can we reach a consensus?"},
+      {word:"brainstorm",  pron:"/ˈbreɪnstɔːm/",  meaning:"động não",         example:"Let's brainstorm some solutions."},
+      {word:"wrap up",     pron:"/ræp ʌp/",        meaning:"kết thúc",         example:"Let's wrap up the meeting."},
+      {word:"minutes",     pron:"/ˈmɪnɪts/",       meaning:"biên bản họp",     example:"Who will take the minutes?"},
+      {word:"action items",pron:"/ˈækʃən ˈaɪtəmz/",meaning:"việc cần làm",   example:"What are the action items?"},
+      {word:"raise a point",pron:"/reɪz ə pɔɪnt/",meaning:"nêu ra điểm",     example:"I'd like to raise a point here."},
+      {word:"take the floor",pron:"/teɪk ðə flɔːr/",meaning:"được phát biểu",example:"May I take the floor?"},
+    ]},
+    "M3W1_airport": { title:"Sân bay & Du lịch", words:[
+      {word:"itinerary",pron:"/aɪˈtɪnərəri/",meaning:"lịch trình chuyến đi",example:"Let me check my itinerary."},
+      {word:"layover",  pron:"/ˈleɪoʊvər/",  meaning:"quá cảnh",             example:"We have a 3-hour layover."},
+      {word:"boarding", pron:"/ˈbɔːrdɪŋ/",   meaning:"lên máy bay",          example:"Boarding starts in 20 minutes."},
+      {word:"customs",  pron:"/ˈkʌstəmz/",   meaning:"hải quan",             example:"Please proceed to customs."},
+      {word:"declare",  pron:"/dɪˈkleər/",   meaning:"khai báo",             example:"Do you have anything to declare?"},
+      {word:"carry-on", pron:"/ˈkæri ɒn/",   meaning:"hành lý xách tay",     example:"Is this bag a carry-on?"},
+      {word:"jet lag",  pron:"/dʒet læɡ/",   meaning:"mệt lệch múi giờ",     example:"I'm still suffering from jet lag."},
+      {word:"turbulence",pron:"/ˈtɜːrbjuləns/",meaning:"nhiễu loạn không khí",example:"We may experience turbulence."},
+    ]},
+    "M4W1_movies": { title:"Phim & Giải trí", words:[
+      {word:"plot",         pron:"/plɒt/",           meaning:"cốt truyện",     example:"The plot is very complex."},
+      {word:"compelling",   pron:"/kəmˈpelɪŋ/",      meaning:"cuốn hút",       example:"The story is compelling."},
+      {word:"sequel",       pron:"/ˈsiːkwəl/",        meaning:"phần tiếp theo", example:"I can't wait for the sequel."},
+      {word:"overrated",    pron:"/ˌoʊvərˈreɪtɪd/",  meaning:"quá được khen",  example:"I think it's overrated."},
+      {word:"binge-watch",  pron:"/bɪndʒ wɒtʃ/",     meaning:"xem nhiều tập",  example:"I binge-watched the series."},
+      {word:"cliffhanger",  pron:"/ˈklɪfhæŋər/",      meaning:"kết thúc hồi hộp",example:"It ended on a cliffhanger!"},
+      {word:"soundtrack",   pron:"/ˈsaʊndtræk/",      meaning:"nhạc phim",      example:"The soundtrack is stunning."},
+      {word:"streaming",    pron:"/ˈstriːmɪŋ/",        meaning:"xem trực tuyến", example:"Is it available for streaming?"},
+    ]},
+    "M5W1_expressing_opinions": { title:"Bày tỏ ý kiến", words:[
+      {word:"perspective",  pron:"/pərˈspektɪv/",    meaning:"quan điểm",       example:"From my perspective, this is unfair."},
+      {word:"nuance",       pron:"/ˈnjuːɑːns/",      meaning:"sắc thái",        example:"There's a lot of nuance here."},
+      {word:"bias",         pron:"/ˈbaɪəs/",          meaning:"định kiến",       example:"We all have unconscious biases."},
+      {word:"elaborate",    pron:"/ɪˈlæbəreɪt/",     meaning:"giải thích thêm", example:"Could you elaborate on that?"},
+      {word:"valid",        pron:"/ˈvælɪd/",          meaning:"hợp lệ, đúng",   example:"That's a valid concern."},
+      {word:"compelling evidence",pron:"/kəmˈpelɪŋ/",meaning:"bằng chứng thuyết phục",example:"There's compelling evidence."},
+      {word:"counterargument",pron:"/ˈkaʊntər/",     meaning:"lý lẽ phản bác",  example:"There's a valid counterargument."},
+      {word:"assume",       pron:"/əˈsjuːm/",         meaning:"giả định",        example:"Don't assume — ask first."},
+    ]},
+    "M6W1_idioms": { title:"Thành ngữ thông dụng", words:[
+      {word:"hit the nail on the head",pron:"/hɪt/",  meaning:"nói đúng vào vấn đề",example:"You've hit the nail on the head."},
+      {word:"break the ice",           pron:"/breɪk/",meaning:"phá vỡ ngại ngùng",  example:"Tell a joke to break the ice."},
+      {word:"under the weather",       pron:"/ˈʌndər/",meaning:"không khỏe",        example:"I'm feeling under the weather."},
+      {word:"bite the bullet",         pron:"/baɪt/", meaning:"cắn răng chịu",      example:"Just bite the bullet and do it."},
+      {word:"read between the lines",  pron:"/riːd/", meaning:"hiểu ý ngầm",        example:"Learn to read between the lines."},
+      {word:"speak your mind",         pron:"/spiːk/",meaning:"nói thẳng",          example:"Don't be afraid to speak your mind."},
+      {word:"a blessing in disguise",  pron:"/ˈblesɪŋ/",meaning:"phúc trong họa",  example:"Losing that job was a blessing in disguise."},
+      {word:"burning the midnight oil",pron:"/ˈbɜːnɪŋ/",meaning:"thức khuya làm", example:"She's been burning the midnight oil."},
+    ]},
+  },
+  zh: {
+    "M1W1_greetings": { title:"Chào hỏi cơ bản", words:[
+      {word:"你好",     pron:"nǐ hǎo",          meaning:"xin chào",          example:"你好！很高兴认识你。"},
+      {word:"谢谢",     pron:"xiè xiè",         meaning:"cảm ơn",            example:"谢谢你的帮助！"},
+      {word:"对不起",   pron:"duì bu qǐ",       meaning:"xin lỗi",           example:"对不起，我迟到了。"},
+      {word:"没关系",   pron:"méi guān xi",     meaning:"không sao",         example:"没关系，下次注意就好。"},
+      {word:"请",       pron:"qǐng",             meaning:"xin mời / làm ơn", example:"请坐！"},
+      {word:"再见",     pron:"zài jiàn",        meaning:"tạm biệt",          example:"明天见！再见！"},
+      {word:"你好吗",   pron:"nǐ hǎo ma",       meaning:"bạn khỏe không",    example:"你好吗？我很好，谢谢。"},
+      {word:"我叫",     pron:"wǒ jiào",         meaning:"tôi tên là",        example:"我叫阮文安，你呢？"},
+    ]},
+    "M1W1_numbers": { title:"Số đếm & Thời gian", words:[
+      {word:"一二三",   pron:"yī èr sān",       meaning:"một hai ba",       example:"一、二、三，出发！"},
+      {word:"现在几点", pron:"xiàn zài jǐ diǎn",meaning:"bây giờ mấy giờ", example:"现在几点？八点半。"},
+      {word:"今天",     pron:"jīn tiān",        meaning:"hôm nay",          example:"今天天气很好。"},
+      {word:"明天",     pron:"míng tiān",       meaning:"ngày mai",         example:"明天我有会议。"},
+      {word:"昨天",     pron:"zuó tiān",        meaning:"hôm qua",          example:"昨天我去了超市。"},
+      {word:"多少钱",   pron:"duō shǎo qián",  meaning:"bao nhiêu tiền",   example:"这个多少钱？"},
+      {word:"星期",     pron:"xīng qī",         meaning:"tuần / thứ",       example:"今天星期几？"},
+      {word:"半",       pron:"bàn",              meaning:"nửa, rưỡi",        example:"现在三点半。"},
+    ]},
+    "M1W2_self_intro": { title:"Giới thiệu bản thân", words:[
+      {word:"我是越南人",pron:"wǒ shì yuè nán rén",meaning:"tôi là người Việt",example:"我是越南人，来自胡志明市。"},
+      {word:"爱好",      pron:"ài hào",            meaning:"sở thích",         example:"我的爱好是打球和听音乐。"},
+      {word:"请多关照", pron:"qǐng duō guān zhào",meaning:"nhờ sự quan tâm",  example:"初次见面，请多关照！"},
+      {word:"家人",      pron:"jiā rén",           meaning:"thành viên gia đình",example:"我的家人住在河内。"},
+      {word:"多大了",    pron:"duō dà le",         meaning:"bao nhiêu tuổi",   example:"你多大了？我二十八岁。"},
+      {word:"哪里人",    pron:"nǎ lǐ rén",         meaning:"quê ở đâu",        example:"你是哪里人？"},
+      {word:"学习汉语", pron:"xué xí hàn yǔ",    meaning:"học tiếng Trung",  example:"我在学习汉语。"},
+      {word:"我的工作是",pron:"wǒ de gōng zuò shì",meaning:"công việc của tôi là",example:"我的工作是工程师。"},
+    ]},
+    "M1W3_food_drink": { title:"Đồ ăn & Đặt món", words:[
+      {word:"我要点菜", pron:"wǒ yào diǎn cài",meaning:"tôi muốn gọi món", example:"服务员，我要点菜！"},
+      {word:"好吃",     pron:"hǎo chī",        meaning:"ngon",             example:"这个菜真的很好吃！"},
+      {word:"辣",       pron:"là",              meaning:"cay",              example:"这个菜太辣了！"},
+      {word:"不辣",     pron:"bù là",          meaning:"không cay",        example:"请做不辣的，谢谢。"},
+      {word:"买单",     pron:"mǎi dān",        meaning:"tính tiền",        example:"服务员，买单！"},
+      {word:"推荐",     pron:"tuī jiàn",       meaning:"gợi ý",            example:"你们有什么推荐？"},
+      {word:"素食",     pron:"sù shí",         meaning:"đồ ăn chay",       example:"有素食的选项吗？"},
+      {word:"饮料",     pron:"yǐn liào",       meaning:"đồ uống",          example:"你们有什么饮料？"},
+    ]},
+    "M2W1_workplace": { title:"Nơi làm việc", words:[
+      {word:"会议",     pron:"huì yì",         meaning:"cuộc họp",         example:"下午三点有一个会议。"},
+      {word:"同事",     pron:"tóng shì",       meaning:"đồng nghiệp",      example:"我的同事很友好。"},
+      {word:"项目",     pron:"xiàng mù",       meaning:"dự án",            example:"这个项目很重要。"},
+      {word:"加班",     pron:"jiā bān",        meaning:"làm thêm giờ",     example:"今天需要加班到八点。"},
+      {word:"截止日期", pron:"jié zhǐ rì qī",  meaning:"hạn chót",         example:"截止日期是下周五。"},
+      {word:"老板",     pron:"lǎo bǎn",        meaning:"sếp, ông chủ",     example:"老板今天不在公司。"},
+      {word:"合作",     pron:"hé zuò",         meaning:"hợp tác",          example:"我们需要加强合作。"},
+      {word:"汇报",     pron:"huì bào",        meaning:"báo cáo",          example:"我需要向老板汇报工作。"},
+    ]},
+    "M3W1_travel": { title:"Du lịch Trung Quốc", words:[
+      {word:"订票",     pron:"dìng piào",      meaning:"đặt vé",           example:"我想订两张去北京的票。"},
+      {word:"高铁",     pron:"gāo tiě",        meaning:"tàu cao tốc",      example:"坐高铁去上海只需四小时。"},
+      {word:"行李",     pron:"xíng lǐ",        meaning:"hành lý",          example:"我的行李超重了。"},
+      {word:"护照",     pron:"hù zhào",        meaning:"hộ chiếu",         example:"请出示您的护照。"},
+      {word:"迷路",     pron:"mí lù",          meaning:"bị lạc đường",     example:"对不起，我迷路了。"},
+      {word:"地铁",     pron:"dì tiě",         meaning:"tàu điện ngầm",    example:"坐地铁去天安门广场。"},
+      {word:"入住",     pron:"rù zhù",         meaning:"check-in khách sạn",example:"我要办理入住手续。"},
+      {word:"退房",     pron:"tuì fáng",       meaning:"check-out",        example:"明天上午十点退房。"},
+    ]},
+    "M5W1_advanced_conversation": { title:"Hội thoại nâng cao", words:[
+      {word:"其实",       pron:"qí shí",               meaning:"thực ra",          example:"其实，我不太同意。"},
+      {word:"不过",       pron:"bù guò",               meaning:"tuy nhiên",        example:"这个很好，不过还需改进。"},
+      {word:"虽然...但是",pron:"suī rán... dàn shì",   meaning:"tuy...nhưng...",   example:"虽然很难，但是我会成功。"},
+      {word:"而且",       pron:"ér qiě",               meaning:"hơn nữa",          example:"他不仅努力，而且聪明。"},
+      {word:"因为...所以",pron:"yīn wèi... suǒ yǐ",   meaning:"vì...nên...",      example:"因为下雨，所以我没去。"},
+      {word:"总的来说",   pron:"zǒng de lái shuō",    meaning:"nói chung là",     example:"总的来说，我很满意。"},
+      {word:"换句话说",   pron:"huàn jù huà shuō",    meaning:"nói cách khác",    example:"换句话说，需要更多时间。"},
+      {word:"一方面...另一方面",pron:"yī fāng miàn...",meaning:"một mặt...mặt khác",example:"一方面贵，另一方面质量好。"},
+    ]},
+    "M6W1_business_chinese": { title:"Tiếng Trung kinh doanh", words:[
+      {word:"商务谈判", pron:"shāng wù tán pàn",meaning:"đàm phán kinh doanh",example:"明天有重要的商务谈判。"},
+      {word:"合同",     pron:"hé tong",         meaning:"hợp đồng",          example:"请查看合同条款。"},
+      {word:"预算",     pron:"yù suàn",         meaning:"ngân sách",         example:"这个项目的预算是多少？"},
+      {word:"市场",     pron:"shì chǎng",       meaning:"thị trường",        example:"越南市场有很大的潜力。"},
+      {word:"投资",     pron:"tóu zī",          meaning:"đầu tư",            example:"这是很好的投资机会。"},
+      {word:"利润",     pron:"lì rùn",          meaning:"lợi nhuận",         example:"今年利润增加了20%。"},
+      {word:"品牌",     pron:"pǐn pái",         meaning:"thương hiệu",       example:"我们需要建立自己的品牌。"},
+      {word:"合作伙伴", pron:"hé zuò huǒ bàn",  meaning:"đối tác kinh doanh",example:"需要找可靠的合作伙伴。"},
+    ]},
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// ROADMAP DATA
+// ═══════════════════════════════════════════════════
+const ROADMAP = {
+  en: [
+    {month:1,week:1,day:1, vocab:"M1W1_greetings",   theme:"👋 Chào hỏi & Giới thiệu", goal:"Giới thiệu bản thân tự tin bằng tiếng Anh"},
+    {month:1,week:1,day:2, vocab:"M1W1_family",       theme:"👨‍👩‍👧 Gia đình",                 goal:"Kể về gia đình và người thân"},
+    {month:1,week:1,day:3, vocab:"M1W2_daily_routine",theme:"⏰ Thói quen hàng ngày",       goal:"Mô tả lịch trình từ sáng đến tối"},
+    {month:1,week:1,day:4, vocab:"M1W2_food",         theme:"🍜 Đồ ăn & Nhà hàng",         goal:"Gọi đồ ăn, hỏi menu tự nhiên"},
+    {month:2,week:3,day:8, vocab:"M2W1_interview",    theme:"💼 Phỏng vấn xin việc",        goal:"Trả lời câu phỏng vấn bằng tiếng Anh"},
+    {month:2,week:3,day:9, vocab:"M2W2_meetings",     theme:"🤝 Họp hành & Thảo luận",      goal:"Bày tỏ ý kiến trong cuộc họp"},
+    {month:3,week:5,day:15,vocab:"M3W1_airport",      theme:"✈️ Sân bay & Du lịch",         goal:"Xử lý mọi tình huống tại sân bay"},
+    {month:4,week:9,day:29,vocab:"M4W1_movies",       theme:"🎬 Phim & Giải trí",            goal:"Review phim, bày tỏ cảm xúc tự nhiên"},
+    {month:5,week:13,day:43,vocab:"M5W1_expressing_opinions",theme:"💡 Bày tỏ ý kiến",    goal:"Tranh luận và bảo vệ quan điểm"},
+    {month:6,week:17,day:57,vocab:"M6W1_idioms",      theme:"🗣️ Thành ngữ",               goal:"Dùng idioms tự nhiên trong hội thoại"},
+    {month:6,week:18,day:60,vocab:"M6W1_idioms",      theme:"🏆 Free Talk — Tổng kết",     goal:"Nói tự do 10 phút không dừng"},
+  ],
+  zh: [
+    {month:1,week:1,day:1, vocab:"M1W1_greetings",   theme:"你好！Chào hỏi",               goal:"Chào hỏi và giới thiệu bản thân"},
+    {month:1,week:1,day:2, vocab:"M1W1_numbers",      theme:"⏰ Số đếm & Thời gian",         goal:"Nói giờ, ngày, tháng, giá tiền"},
+    {month:1,week:1,day:3, vocab:"M1W2_self_intro",   theme:"🙋 Giới thiệu chi tiết",        goal:"Nói về bản thân, nghề nghiệp, sở thích"},
+    {month:1,week:1,day:4, vocab:"M1W3_food_drink",   theme:"🍜 Gọi đồ ăn",                 goal:"Gọi món, hỏi giá, khen đồ ăn ngon"},
+    {month:2,week:3,day:8, vocab:"M2W1_workplace",    theme:"💼 Môi trường làm việc",        goal:"Giao tiếp cơ bản trong văn phòng TQ"},
+    {month:3,week:5,day:15,vocab:"M3W1_travel",       theme:"✈️ Du lịch Trung Quốc",        goal:"Xử lý tình huống khi đi du lịch TQ"},
+    {month:5,week:13,day:43,vocab:"M5W1_advanced_conversation",theme:"💬 Hội thoại nâng cao",goal:"Dùng liên từ phức tạp, tranh luận nhẹ"},
+    {month:6,week:17,day:57,vocab:"M6W1_business_chinese",theme:"💼 Kinh doanh tiếng Trung",goal:"Đàm phán, hợp đồng, thị trường"},
+    {month:6,week:18,day:60,vocab:"M6W1_business_chinese",theme:"🏆 Free Talk — Tổng kết", goal:"Nói tự do tiếng Trung 5 phút tự tin"},
+  ]
+};
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let state = {
+  lang: "en",
+  dayIdx: 0,
+  history: [],
+  status: "ready",
+  mediaRecorder: null,
+  audioChunks: [],
+  completedDays: { en: new Set(), zh: new Set() },
+};
+
+// ═══════════════════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════════════════
+function currentRoadmap() { return ROADMAP[state.lang]; }
+function currentDay()     { return currentRoadmap()[state.dayIdx]; }
+function currentVocab()   { return VOCAB_DB[state.lang][currentDay().vocab]?.words || []; }
+
+function setStatus(s, label, cls) {
+  state.status = s;
+  const pill = document.getElementById("status-pill");
+  pill.className = `status-pill ${cls}`;
+  pill.textContent = label;
+}
+
+function renderDayCard() {
+  const d = currentDay();
+  document.getElementById("day-badge").textContent  = `📅 Ngày ${d.day} · Tháng ${d.month}`;
+  document.getElementById("day-title").textContent  = d.theme;
+  document.getElementById("day-goal").textContent   = `🎯 ${d.goal}`;
+  document.getElementById("empty-theme").textContent = d.theme;
+}
+
+function renderVocabGrid() {
+  const grid = document.getElementById("vocab-grid");
+  const words = currentVocab();
+  grid.innerHTML = words.map((w, i) => `
+    <div class="vocab-card">
+      <div class="v-word">${w.word}</div>
+      <div class="v-pron">${w.pron}</div>
+      <div class="v-meaning">${w.meaning}</div>
+      <div class="v-example">${w.example}</div>
+      <button class="spk-btn" id="spk-${i}" onclick="playWordAudio(${i},'${escHtml(w.word)}')">🔊</button>
+    </div>
+  `).join("");
+}
+
+function escHtml(s) { return s.replace(/'/g, "\\'"); }
+
+function renderRoadmapNav() {
+  const nav = document.getElementById("roadmap-nav");
+  const rm  = currentRoadmap();
+  const byMonth = {};
+  rm.forEach((d,i) => { (byMonth[d.month] = byMonth[d.month]||[]).push({...d,idx:i}); });
+
+  nav.innerHTML = Object.entries(byMonth).map(([m, days]) => `
+    <div class="month-group">
+      <div class="month-header" onclick="toggleMonth(this)">
+        <span>Tháng ${m}</span><span>▾</span>
+      </div>
+      <div class="month-days ${parseInt(m) === currentDay().month ? 'open' : ''}">
+        ${days.map(d => {
+          const done = state.completedDays[state.lang].has(d.day);
+          const cur  = d.idx === state.dayIdx;
+          const icon = done ? "✅" : (cur ? "▶️" : "⬜");
+          const cls  = done ? "day-nav-btn done" : (cur ? "day-nav-btn current" : "day-nav-btn");
+          return `<button class="${cls}" onclick="gotoDay(${d.idx})">${icon} N${d.day}: ${d.theme}</button>`;
+        }).join("")}
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderProgress() {
+  const total = currentRoadmap().length;
+  const done  = state.completedDays[state.lang].size;
+  const pct   = Math.round(done / total * 100);
+  const lang  = state.lang === "en" ? "Tiếng Anh" : "Tiếng Trung";
+  document.getElementById("prog-label").textContent = `Tiến độ ${lang}`;
+  document.getElementById("prog-fill").style.width = pct + "%";
+  document.getElementById("prog-fill").className = `progress-fill ${state.lang === "en" ? "fill-en" : "fill-zh"}`;
+  document.getElementById("prog-text").textContent = `${done}/${total} ngày (${pct}%)`;
+}
+
+function addChatBubble(role, text, extra) {
+  const area = document.getElementById("chat-area");
+  const empty = document.getElementById("chat-empty");
+  if (empty) empty.remove();
+
+  const wrap = document.createElement("div");
+  if (role === "user") {
+    wrap.innerHTML = `<div class="label-u">Bạn</div><div class="bubble-u">${text}</div>`;
+  } else {
+    let html = `<div class="label-b">🎓 Coach</div><div class="bubble-b">${text}</div>`;
+    if (extra?.pron) {
+      const p = extra.pron;
+      const sc = p.overall;
+      const cls = sc >= 80 ? "score-good" : sc >= 60 ? "score-ok" : "score-bad";
+      const words = (p.words||[]).slice(0,5).map(w=>`${w.word}:${w.score}%`).join(" · ");
+      html += `<div class="score-card">
+        <div class="score-num ${cls}">${sc}%</div>
+        <div class="score-detail">
+          <b style="color:var(--text)">Điểm phát âm</b><br>
+          Chính xác: ${p.accuracy}% · Lưu loát: ${p.fluency}% · Đầy đủ: ${p.completeness}%
+          ${words ? `<br>${words}` : ""}
+        </div>
+      </div>`;
+    }
+    if (extra?.audioB64) {
+      const audio = new Audio(`data:audio/mp3;base64,${extra.audioB64}`);
+      audio.play().catch(()=>{});
+      html += `<audio controls src="data:audio/mp3;base64,${extra.audioB64}"></audio>`;
+    }
+    wrap.innerHTML = html;
+  }
+  area.appendChild(wrap);
+  area.scrollTop = area.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════
+function switchLang(l) {
+  state.lang    = l;
+  state.dayIdx  = 0;
+  state.history = [];
+  document.getElementById("btn-en").className = `lang-btn ${l==="en"?"active-en":""}`;
+  document.getElementById("btn-zh").className = `lang-btn ${l==="zh"?"active-zh":""}`;
+  document.getElementById("chat-area").innerHTML = `<div class="chat-empty" id="chat-empty">
+    💬 Nhấn ghi âm và bắt đầu về chủ đề <b id="empty-theme">${currentDay().theme}</b><br>
+    <span style="font-size:.75rem;color:var(--dim)">Nói tiếng Việt → Coach giải thích · Nói ngoại ngữ → Coach luyện tập</span>
+  </div>`;
+  renderAll();
+}
+
+function gotoDay(idx) {
+  state.dayIdx  = idx;
+  state.history = [];
+  document.getElementById("chat-area").innerHTML = `<div class="chat-empty" id="chat-empty">
+    💬 Nhấn ghi âm và bắt đầu về chủ đề <b id="empty-theme">${currentDay().theme}</b><br>
+    <span style="font-size:.75rem;color:var(--dim)">Nói tiếng Việt → Coach giải thích · Nói ngoại ngữ → Coach luyện tập</span>
+  </div>`;
+  renderAll();
+}
+
+function toggleMonth(el) {
+  const days = el.nextElementSibling;
+  days.classList.toggle("open");
+}
+
+function renderAll() {
+  renderDayCard();
+  renderVocabGrid();
+  renderRoadmapNav();
+  renderProgress();
+  setStatus("ready", "✅ Sẵn sàng luyện tập", "s-ready");
+}
+
+// ── TTS word ──
+async function playWordAudio(idx, word) {
+  const btn = document.getElementById(`spk-${idx}`);
+  btn.classList.add("loading"); btn.textContent = "⏳";
+  try {
+    const r = await fetch(`${API_BASE}/api/tts`, {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ text: word, lang: state.lang, hd: true })
+    });
+    const data = await r.json();
+    if (data.audio_b64) {
+      new Audio(`data:audio/mp3;base64,${data.audio_b64}`).play();
+    }
+  } catch(e) { alert("Lỗi kết nối server. Hãy kiểm tra API_BASE trong config."); }
+  btn.classList.remove("loading"); btn.textContent = "🔊";
+}
+
+// ── Main record flow ──
+async function toggleRecord() {
+  if (state.status !== "ready") return;
+  setStatus("recording", "🔴 Đang ghi âm — nói ngay!", "s-rec");
+  const btn = document.getElementById("rec-btn");
+  btn.textContent = "⏹️ Dừng ghi âm"; btn.classList.add("recording");
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    state.audioChunks = [];
+    state.mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
+    state.mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      btn.textContent = "🎙️ Bắt đầu ghi âm"; btn.classList.remove("recording");
+      await processAudio();
+    };
+    state.mediaRecorder.start();
+    btn.onclick = stopRecord;
+  } catch(e) {
+    setStatus("ready","✅ Sẵn sàng luyện tập","s-ready");
+    btn.textContent = "🎙️ Bắt đầu ghi âm"; btn.classList.remove("recording");
+    btn.onclick = toggleRecord;
+    alert("Không thể truy cập microphone. Hãy cho phép trình duyệt dùng mic.");
+  }
+}
+
+function stopRecord() {
+  if (state.mediaRecorder?.state === "recording") state.mediaRecorder.stop();
+  document.getElementById("rec-btn").onclick = toggleRecord;
+}
+
+async function processAudio() {
+  const blob = new Blob(state.audioChunks, { type: "audio/webm" });
+
+  // 1. Transcribe
+  setStatus("transcribing","⚡ Đang nhận diện giọng nói...","s-proc");
+  const formData = new FormData();
+  formData.append("audio", blob, "audio.webm");
+  formData.append("lang", "auto");
+
+  let userText = "";
+  try {
+    const r = await fetch(`${API_BASE}/api/transcribe`, { method:"POST", body:formData });
+    const data = await r.json();
+    userText = data.text;
+  } catch(e) { setStatus("ready","✅ Sẵn sàng","s-ready"); return; }
+
+  if (!userText) { setStatus("ready","✅ Sẵn sàng","s-ready"); return; }
+  addChatBubble("user", userText);
+  state.history.push({ role:"user", content:userText });
+
+  // 2. Pronunciation assessment (parallel)
+  setStatus("thinking","🧠 Coach đang trả lời...","s-proc");
+  const pronPromise = assessPronunciation(blob, userText);
+
+  // 3. Chat
+  const vocabStr = currentVocab().map(w=>`"${w.word}" (${w.pron}) = ${w.meaning}`).join(" | ");
+  let reply = "";
+  try {
+    const r = await fetch(`${API_BASE}/api/chat`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        lang: state.lang,
+        theme: currentDay().theme,
+        vocab: vocabStr,
+        history: state.history.slice(-12),
+        user_message: userText,
+      })
+    });
+    const data = await r.json();
+    reply = data.reply;
+  } catch(e) { setStatus("ready","✅ Sẵn sàng","s-ready"); return; }
+
+  state.history.push({ role:"assistant", content:reply });
+
+  // 4. TTS for reply
+  setStatus("speaking","🔊 Đang tạo giọng nói...","s-proc");
+  let audioB64 = null;
+  try {
+    const r = await fetch(`${API_BASE}/api/tts`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ text:reply, lang:state.lang })
+    });
+    const data = await r.json();
+    audioB64 = data.audio_b64;
+  } catch(e) {}
+
+  // 5. Wait for pron result
+  const pron = await pronPromise;
+
+  addChatBubble("assistant", reply, { audioB64, pron });
+
+  // Mark day complete after 3 exchanges
+  const userTurns = state.history.filter(m => m.role==="user").length;
+  if (userTurns >= 3) state.completedDays[state.lang].add(currentDay().day);
+
+  setStatus("ready","✅ Sẵn sàng luyện tập","s-ready");
+  renderRoadmapNav();
+  renderProgress();
+}
+
+async function assessPronunciation(blob, refText) {
+  try {
+    const fd = new FormData();
+    fd.append("audio", blob, "audio.webm");
+    fd.append("reference_text", refText);
+    fd.append("lang", state.lang);
+    const r = await fetch(`${API_BASE}/api/pronunciation`, { method:"POST", body:fd });
+    const data = await r.json();
+    if (data.available && data.overall !== undefined) return data;
+  } catch(e) {}
+  return null;
+}
+
+// ── Pronunciation practice (sidebar) ──
+let pronRecording = false;
+async function startPronPractice() {
+  const word = document.getElementById("pron-word-input").value.trim();
+  if (!word) { alert("Nhập từ cần luyện phát âm trước!"); return; }
+  const btn = document.getElementById("pron-rec-btn");
+  const res = document.getElementById("pron-result");
+
+  if (!pronRecording) {
+    pronRecording = true;
+    btn.textContent = "⏹️ Dừng & Chấm điểm"; btn.classList.add("recording");
+    res.textContent = "🔴 Đang ghi âm...";
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      const chunks = [];
+      const mr = new MediaRecorder(stream, {mimeType:"audio/webm"});
+      mr.ondataavailable = e => chunks.push(e.data);
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t=>t.stop());
+        pronRecording = false;
+        btn.textContent = "🎤 Ghi âm & Chấm điểm"; btn.classList.remove("recording");
+        res.textContent = "⚡ Đang đánh giá...";
+        const blob = new Blob(chunks, {type:"audio/webm"});
+        const pron = await assessPronunciation(blob, word);
+        if (pron) {
+          const sc = pron.overall;
+          const cls = sc>=80?"score-good":sc>=60?"score-ok":"score-bad";
+          const words = (pron.words||[]).map(w=>`${w.word}: ${w.score}%`).join(" · ");
+          res.innerHTML = `<div style="margin-top:6px"><span class="score-num ${cls}" style="font-size:1.2rem">${sc}%</span> — <b style="color:var(--text)">${word}</b><br><span style="color:var(--muted)">${words||"Không đủ dữ liệu từng từ"}</span></div>`;
+        } else {
+          res.innerHTML = `<span style="color:var(--muted)">⚠️ Cần Azure Speech Key để chấm điểm phát âm.</span>`;
+        }
+      };
+      mr.start();
+      btn.onclick = () => { mr.stop(); btn.onclick = startPronPractice; };
+    } catch(e) {
+      pronRecording = false; btn.textContent = "🎤 Ghi âm & Chấm điểm"; btn.classList.remove("recording");
+      res.textContent = "❌ Không thể truy cập microphone.";
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+renderAll();
+</script>
+</body>
+</html>
